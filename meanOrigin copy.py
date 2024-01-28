@@ -31,6 +31,7 @@ def create_new_block(previous_block, data):
     
     return Block(index, previous_block.hash, timestamp, data, hash, nonce)
 
+
 app = Flask(__name__)
 
 # Create the blockchain and add a genesis block
@@ -49,11 +50,12 @@ def get_chain():
             'index': block.index,
             'previous_hash': block.previous_hash,
             'timestamp': block.timestamp,
-            'data': block.data,
+            'data': block.data,  # Display the actual block data
             'hash': block.hash,
             'nonce': block.nonce
         })
     return jsonify({'chain': chain_data, 'length': len(chain_data)})
+
 
 @app.route('/mine', methods=['POST'])
 def mine():
@@ -71,8 +73,13 @@ def mine():
         response = {'message': 'Invalid request data. Please provide all required fields.'}
         return jsonify(response), 400
 
-    # Create new data string
-    new_data = f"Student ID: {student_id}, Bus ID: {bus_id}, Begin: {begin}, Destination: {destination}"
+    # Create new data dictionary
+    new_data = {
+        'Student ID': student_id,
+        'Bus ID': bus_id,
+        'Begin': begin,
+        'Destination': destination
+    }
 
     # Create a new block
     new_block = create_new_block(previous_block, new_data)
@@ -109,6 +116,62 @@ def is_chain_valid():
 
     response = {'message': 'Blockchain is valid!'}
     return jsonify(response), 200
+
+@app.route('/edit_data', methods=['POST'])
+def edit_data():
+    # Retrieve data from JSON request
+    request_data = request.get_json()
+    block_index_to_edit = request_data.get('block_index', None)
+
+    # Validate that block_index is provided
+    if block_index_to_edit is None:
+        response = {'message': 'Please provide the block_index to edit.'}
+        return jsonify(response), 400
+
+    try:
+        block_index_to_edit = int(block_index_to_edit)
+    except ValueError:
+        response = {'message': 'Invalid block_index. Must be an integer.'}
+        return jsonify(response), 400
+
+    # Check if the specified block index is within the range of the blockchain
+    if block_index_to_edit < 0 or block_index_to_edit >= len(blockchain):
+        response = {'message': 'Invalid block_index. Out of range.'}
+        return jsonify(response), 400
+
+    # Get the block at the specified index
+    block_to_edit = blockchain[block_index_to_edit]
+
+    # Retrieve new data to update from JSON request
+    new_student_id = request_data.get('new_student_id', '')
+    new_bus_id = request_data.get('new_bus_id', '')
+    new_begin = request_data.get('new_begin', '')
+    new_destination = request_data.get('new_destination', '')
+
+    # Update data in the block
+    block_to_edit.data = {
+        'Student ID': new_student_id,
+        'Bus ID': new_bus_id,
+        'Begin': new_begin,
+        'Destination': new_destination
+    }
+
+    # Recalculate hash for the updated block
+    block_to_edit.hash = calculate_hash(block_to_edit.index, block_to_edit.previous_hash, block_to_edit.timestamp, block_to_edit.data, block_to_edit.nonce)
+
+    response = {
+        'message': f'Data in block {block_index_to_edit} updated successfully!',
+        'index': block_to_edit.index,
+        'timestamp': block_to_edit.timestamp,
+        'data': block_to_edit.data,
+        'nonce': block_to_edit.nonce,
+        'previous_hash': block_to_edit.previous_hash,
+        'hash': block_to_edit.hash
+    }
+
+
+    return jsonify(response), 200
+
 
 
 
