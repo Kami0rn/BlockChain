@@ -25,7 +25,7 @@ def create_new_block(previous_block, data):
     hash = calculate_hash(index, previous_block.hash, timestamp, data, nonce)
     
     # Proof of work: Keep incrementing nonce until the hash meets certain criteria (e.g., starts with '000')
-    while not hash.startswith('000'):
+    while not hash.startswith('00000'):
         nonce += 1
         hash = calculate_hash(index, previous_block.hash, timestamp, data, nonce)
     
@@ -57,7 +57,7 @@ def get_chain():
     return jsonify({'chain': chain_data, 'length': len(chain_data)})
 
 
-@app.route('/mine', methods=['POST'])
+@app.route('/add_block', methods=['POST'])
 def mine():
     global previous_block  # Declare previous_block as a global variable
 
@@ -98,7 +98,7 @@ def mine():
     }
     return jsonify(response), 200
 
-@app.route('/valid', methods=['GET'])
+@app.route('/data_verification', methods=['GET'])
 def is_chain_valid():
     for i in range(1, len(blockchain)):
         current_block = blockchain[i]
